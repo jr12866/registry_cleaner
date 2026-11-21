@@ -1,0 +1,65 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+.idea/
+*.vsix
+*.user
+
+# Rider
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+coverage*.xml
+coverage*.json
+
+# Signing material — NEVER commit these
+*.pfx
+*.p12
+*.cer
+*.pem
+*.key
+*.snk
+*.jks
+secrets.json
+*.env
+*.env.*
+
+# Certum SimplySign / eSigner / Azure signing artifacts
+*.csct
+*.pvk
+
+# Backup and journal output produced by running the tool locally
+# Scoped to the repo root so they cannot shadow a legitimate manifest.json
+# or *.reg file inside a package or test fixture.
+Backups/
+Journals/
+/*.reg
+/manifest.json
+/backup-summary.txt
+
+# OS noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local scratch
+scratch/
+tmp/
+*.log
