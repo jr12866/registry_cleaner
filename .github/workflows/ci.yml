@@ -55,7 +55,7 @@ jobs:
           -o artifacts/publish
 
       - name: Upload the portable build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: registry-cleaner-win-x64
           path: artifacts/publish/*
