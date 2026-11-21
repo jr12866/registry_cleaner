@@ -1,0 +1,22 @@
+<Project>
+  <!--
+    Central Package Management. Every PackageReference in the solution must
+    appear here without a Version attribute.
+
+    Dependency policy (see CONTRIBUTING.md):
+      * MIT / Apache-2.0 / BSD / MS-PL only.
+      * No package may introduce network access into the tool.
+      * No telemetry, crash reporting, or usage analytics.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="System.CommandLine" Version="3.0.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+</Project>

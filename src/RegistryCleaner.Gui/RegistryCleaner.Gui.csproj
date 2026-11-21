@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    RegistryCleaner.Gui
+    The WPF desktop application. Consumes the same Core scan/apply engine as
+    the CLI; it contains no rule logic of its own.
+
+    See docs/UI.md for the interface specification.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>RegistryCleaner.Gui</RootNamespace>
+    <AssemblyName>RegistryCleaner</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RegistryCleaner.Core\RegistryCleaner.Core.csproj" />
+  </ItemGroup>
+
+</Project>

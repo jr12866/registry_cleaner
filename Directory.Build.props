@@ -1,0 +1,53 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the solution.
+    See docs/ARCHITECTURE.md for the project layout and ADR-011 for why all
+    projects target net11.0-windows rather than net11.0.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net11.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Registry Cleaner</Product>
+    <Company>Registry Cleaner contributors</Company>
+    <Authors>Joe</Authors>
+    <Copyright>Copyright (c) 2026 Joe</Copyright>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!--
+    Reproducible release builds: the SignPath Foundation requires that release
+    artifacts can be rebuilt from source in a verifiable way. Pinning the SDK
+    (global.json) and the package versions (Directory.Packages.props) is what
+    makes that possible.
+  -->
+  <PropertyGroup Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

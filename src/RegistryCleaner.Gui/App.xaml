@@ -1,0 +1,12 @@
+﻿<Application x:Class="RegistryCleaner.Gui.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:RegistryCleaner.Gui"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!--
+            M0 placeholder theme. The full resource dictionary, including the severity
+            badge and confidence bar styles referenced in docs/UI.md, arrives in M4.
+        -->
+    </Application.Resources>
+</Application>

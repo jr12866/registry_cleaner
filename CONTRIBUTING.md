@@ -25,14 +25,21 @@ and — importantly — the rules a new detection rule has to follow before it c
 ## Build and test
 
 ```powershell
-git clone https://github.com/<your-username>/registry-cleaner.git
+git clone https://github.com/jr12866/registry_cleaner.git
 cd registry-cleaner
 
-dotnet build RegistryCleaner.sln -c Release
-dotnet test  RegistryCleaner.sln -c Release
+dotnet build RegistryCleaner.slnx -c Release
+dotnet test  RegistryCleaner.slnx -c Release
 ```
 
-There is no solution file yet — it is created in milestone M0. Until then, see `docs/PLAN.md`.
+The solution uses the `.slnx` XML format, which needs the .NET 9.0.200 SDK or later and Visual
+Studio 17.13 or later. The project already requires the .NET 11 SDK, so this costs nothing.
+
+To run the CLI:
+
+```powershell
+src\RegistryCleaner.Cli\bin\Release\net11.0-windows\rc.exe --help
+```
 
 ## Project layout
 

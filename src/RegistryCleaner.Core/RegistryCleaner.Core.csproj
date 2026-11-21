@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    RegistryCleaner.Core
+    All rule logic, scoring, safety enforcement, and remediation live here.
+    This project must never reference the CLI or the GUI, and must never
+    contain UI types. See docs/ARCHITECTURE.md.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>RegistryCleaner.Core</RootNamespace>
+    <AssemblyName>RegistryCleaner.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore RegistryCleaner.slnx
+
+      - name: Build
+        run: dotnet build RegistryCleaner.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RegistryCleaner.slnx -c Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Verify the CLI starts
+        shell: pwsh
+        run: |
+          $cli = "src/RegistryCleaner.Cli/bin/Release/net11.0-windows/rc.exe"
+          & $cli --version
+          if ($LASTEXITCODE -ne 0) { throw "rc exited with $LASTEXITCODE" }
+
+      - name: Verify the GUI builds as a single file
+        run: >
+          dotnet publish src/RegistryCleaner.Gui/RegistryCleaner.Gui.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o artifacts/publish
+
+      - name: Upload the portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-cleaner-win-x64
+          path: artifacts/publish/*
+          if-no-files-found: error
+
+  # The release build must be reproducible: the SignPath Foundation requires that
+  # release artifacts can be rebuilt from source in a verifiable way.
+  reproducible-build:
+    name: Reproducible build check
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build twice and compare
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Build-Once([string]$out) {
+            dotnet publish src/RegistryCleaner.Gui/RegistryCleaner.Gui.csproj `
+              -c Release -r win-x64 --self-contained true `
+              -p:PublishSingleFile=true `
+              -p:EnableCompressionInSingleFile=true `
+              -p:IncludeNativeLibrariesForSelfExtract=true `
+              -p:ContinuousIntegrationBuild=true `
+              -o $out | Out-Null
+          }
+          Build-Once "artifacts/a"
+          Build-Once "artifacts/b"
+          $a = Get-FileHash "artifacts/a/RegistryCleaner.exe" -Algorithm SHA256
+          $b = Get-FileHash "artifacts/b/RegistryCleaner.exe" -Algorithm SHA256
+          if ($a.Hash -ne $b.Hash) {
+            throw "Build is not reproducible: $($a.Hash) != $($b.Hash)"
+          }
+          "Reproducible: $($a.Hash)"

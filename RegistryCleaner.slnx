@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RegistryCleaner.Cli/RegistryCleaner.Cli.csproj" />
+    <Project Path="src/RegistryCleaner.Core/RegistryCleaner.Core.csproj" />
+    <Project Path="src/RegistryCleaner.Gui/RegistryCleaner.Gui.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RegistryCleaner.Core.Tests/RegistryCleaner.Core.Tests.csproj" />
+    <Project Path="tests/RegistryCleaner.TestHarness/RegistryCleaner.TestHarness.csproj" />
+  </Folder>
+</Solution>

@@ -4,9 +4,11 @@
 
 ```
 C:\git\registry_cleaner\
-├── RegistryCleaner.sln
-├── Directory.Build.props          # shared TFM, nullable, analyzers, version stamping
-├── Directory.Packages.props        # central package management
+├── RegistryCleaner.slnx             # XML solution format (the .NET 11 SDK default)
+├── global.json                      # pinned SDK — required for reproducible builds
+├── Directory.Build.props            # shared TFM, nullable, analyzers, version stamping
+├── Directory.Packages.props         # central package management
+├── .github\workflows\ci.yml         # build, test, single-file publish, reproducibility check
 ├── README.md
 ├── docs\
 │   ├── PLAN.md
@@ -15,14 +17,19 @@ C:\git\registry_cleaner\
 │   ├── ARCHITECTURE.md
 │   ├── SAFETY.md
 │   ├── RULES.md
-│   └── UI.md
+│   ├── UI.md
+│   └── SIGNING.md
 ├── src\
 │   ├── RegistryCleaner.Core\        # net11.0-windows, library — no UI, no direct registry writes
 │   │   ├── Registry\
 │   │   │   ├── IRegistryReader.cs
-│   │   │   ├── WindowsRegistryReader.cs
+│   │   │   ├── WindowsRegistryReader.cs        # M1
 │   │   │   ├── RegistryLocation.cs
-│   │   │   └── RegistryViewScope.cs
+│   │   │   ├── RegistryValue.cs
+│   │   │   ├── RegistryValueKind.cs
+│   │   │   ├── RegistryHive.cs
+│   │   │   ├── RegistryViewScope.cs
+│   │   │   └── IFileSystemProbe.cs
 │   │   ├── Analysis\
 │   │   │   ├── ReferenceIndex.cs
 │   │   │   ├── ReferenceIndexBuilder.cs
@@ -46,10 +53,16 @@ C:\git\registry_cleaner\
 │   │   │       └── ClutterRules.cs            # R-016 .. R-020
 │   │   ├── Safety\
 │   │   │   ├── ProtectedPathGuard.cs
+│   │   │   ├── ProtectedPath.cs
 │   │   │   ├── ProtectedPaths.cs
+│   │   │   ├── GuardResult.cs
 │   │   │   ├── ElevationGuard.cs
-│   │   │   ├── SystemStateGuard.cs
-│   │   │   └── ConfirmationPolicy.cs
+│   │   │   ├── SystemStateGuard.cs            # M3
+│   │   │   ├── ConfirmationPolicy.cs          # M3
+│   │   │   └── PathNormalization\
+│   │   │       ├── RegistryPathNormalizer.cs
+│   │   │       ├── IPathAliasResolver.cs
+│   │   │       └── Win32PathAliasResolver.cs
 │   │   ├── Remediation\
 │   │   │   ├── IRegistryWriter.cs
 │   │   │   ├── RegistryWriter.cs
@@ -111,9 +124,13 @@ public readonly record struct RegistryLocation(
     RegistryHive Hive,
     string KeyPath,
     string? ValueName,          // null = the key itself
-    RegistryViewScope View,
-    FindingKind Kind)
+    RegistryViewScope View)
 {
+    // Kind is derived, never stored: a location with a value name targets that value,
+    // a location without one targets the key. Storing both would allow the two to
+    // disagree.
+    public bool IsValueTarget => ValueName is not null;
+
     public string DisplayPath => $"{Hive}\\{KeyPath}" +
         (ValueName is null ? "" : $" :: {ValueName}") +
         (View == RegistryViewScope.Default ? "" : $" [{View}]");
@@ -132,11 +149,17 @@ public enum RiskTier { Safe = 1, Low = 2, Moderate = 3, High = 4, Critical = 5 }
 public enum FindingKind { Key, Value }
 
 public sealed record Finding(
-    string Id, string RuleId, RegistryLocation Location, FindingKind Kind,
+    string Id, string RuleId, RegistryLocation Location,
     string Summary, string Explanation, string Evidence,
-    RiskTier Risk, int Confidence, string? SoftwareName,
-    long EstimatedBytes, bool Selectable)
+    RiskTier Risk, int Confidence, FindingCategory Category,
+    string? SoftwareName = null, long EstimatedBytes = 0)
 {
+    // Whether the target is a key or a value follows from the location.
+    public FindingKind Kind => Location.IsValueTarget ? FindingKind.Value : FindingKind.Key;
+
+    // Defaults to selectable, and is cleared by the guard for protected paths.
+    public bool Selectable { get; init; } = Risk is not RiskTier.Critical;
+
     public string SoftwareNameOrLocation => SoftwareName ?? Location.DisplayPath;
 }
 ```
@@ -149,8 +172,8 @@ public sealed record Finding(
 public interface IRegistryReader
 {
     bool KeyExists(RegistryLocation location);
-    IReadOnlyList<RegistryLocation> GetSubKeyNames(RegistryLocation key);
-    IReadOnlyList<RegistryValue> GetValueNames(RegistryLocation key);
+    IReadOnlyList<string> GetSubKeyNames(RegistryLocation key);
+    IReadOnlyList<string> GetValueNames(RegistryLocation key);
     RegistryValue? GetValue(RegistryLocation location);
     IReadOnlyList<RegistryLocation> EnumerateSubKeys(RegistryLocation root);
 }
@@ -158,6 +181,10 @@ public interface IRegistryReader
 public readonly record struct RegistryValue(string Name, RegistryValueKind Kind, object Data,
                                             long ByteSize);
 ```
+
+`EnumerateSubKeys` is **recursive** — it returns every descendant of the root, not just the
+immediate children. The reference index builder needs the whole subtree in one pass; rules that
+only need direct children use `GetSubKeyNames`.
 
 `RegistryValueKind` maps 1:1 onto the native `REG_*` types, including `REG_EXPAND_SZ` and
 `REG_MULTI_SZ` so the backup writer can restore them exactly.
@@ -376,12 +403,19 @@ scan → backup → delete → restore returns the registry to a byte-identical 
 
 ## 8. Repository notes
 
-The Git repository root is `C:\git` (the parent of this directory), and it currently has no
-commits. `C:\git\registry_cleaner` is the project directory. Two options for the first milestone:
+The project is a **standalone Git repository** at `C:\git\registry_cleaner`, initialized
+independently of the surrounding `C:\git` workspace (which holds unrelated projects and was left
+untouched). Published at <https://github.com/jr12866/registry_cleaner>, public, MIT (ADR-022).
 
-1. Keep the project as a subdirectory of the existing `C:\git` repo (which currently holds several
-   unrelated projects, including some not yet committed).
-2. Initialize `C:\git\registry_cleaner` as its own repository.
+| Item | Value |
+|------|-------|
+| Default branch | `main` |
+| Solution file | `RegistryCleaner.slnx` — the XML solution format, which is the .NET 11 SDK default |
+| SDK pin | `global.json` pins 11.0.100 with `rollForward: latestFeature` |
+| Package versions | `Directory.Packages.props` — central package management; every `PackageReference` must omit its version |
+| Build | `dotnet build RegistryCleaner.slnx -c Release` |
+| Tests | `dotnet test RegistryCleaner.slnx -c Release` |
 
-Option 2 is cleaner for an independent project and is the recommendation in `PLAN.md` §10 — this
-awaits the user's decision before any git operation is performed.
+The `.slnx` format requires the .NET 9.0.200 SDK or later, and Visual Studio 17.13 or later.
+Since the project already requires the .NET 11 SDK, this costs nothing.
+

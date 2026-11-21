@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    RegistryCleaner.TestHarness
+    An in-memory implementation of the registry abstractions plus a fixture
+    loader, so that rules can be unit-tested without touching a real registry.
+    See docs/ARCHITECTURE.md section 7.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>RegistryCleaner.TestHarness</RootNamespace>
+    <AssemblyName>RegistryCleaner.TestHarness</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RegistryCleaner.Core\RegistryCleaner.Core.csproj" />
+  </ItemGroup>
+
+</Project>

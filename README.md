@@ -8,8 +8,9 @@ A registry cleanup tool for **Windows 11** that scans the registry for stale, or
 leftover entries, **ranks every finding by severity**, and lets **the user choose** exactly what
 gets removed.
 
-> **Status: planning.** No application code has been written yet. This repository currently
-> contains the design documentation that the implementation will be built from.
+> **Status: milestone M0 complete.** The solution scaffold, the registry abstraction layer,
+> the protected-path safety guard, the test harness, and the CI workflow are in place and
+> building clean. The first detection rules arrive in M1.
 
 ---
 
@@ -58,9 +59,19 @@ registry-cleaner/
 ├── CONTRIBUTING.md          how to build, and the rules a new detection rule must follow
 ├── SECURITY.md              vulnerability reporting, and what counts as one here
 ├── CODE_OF_CONDUCT.md
+├── RegistryCleaner.slnx     the solution
+├── global.json              pinned .NET 11 SDK
+├── Directory.Build.props    shared build settings
+├── Directory.Packages.props central package versions
+├── .github/workflows/       CI: build, test, publish, reproducible-build check
 ├── docs/                    the design documents
-├── src/                     RegistryCleaner.Core / .Cli / .Gui   (M0 onward)
-└── tests/                   TestHarness / Core.Tests             (M0 onward)
+├── src/
+│   ├── RegistryCleaner.Core/    rules, scoring, safety, remediation — no UI types
+│   ├── RegistryCleaner.Cli/     the `rc` command-line interface
+│   └── RegistryCleaner.Gui/     the WPF desktop application
+└── tests/
+    ├── RegistryCleaner.TestHarness/  in-memory registry + .reg-style fixtures
+    └── RegistryCleaner.Core.Tests/   the xUnit suite
 ```
 
 ## Planned capabilities
@@ -87,17 +98,30 @@ registry-cleaner/
 
 ## Build
 
-The implementation is not started, but the intended shape is:
+Requires the **.NET 11 SDK** (pinned in `global.json`).
 
 ```powershell
-dotnet build RegistryCleaner.sln -c Release
-dotnet publish src/RegistryCleaner.Gui -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true `
+git clone https://github.com/jr12866/registry_cleaner.git
+cd registry-cleaner
+
+dotnet build RegistryCleaner.slnx -c Release
+dotnet test  RegistryCleaner.slnx -c Release
+
+# Run the CLI
+src\RegistryCleaner.Cli\bin\Release\net11.0-windows\rc.exe --help
+
+# Produce the portable single-file GUI executable
+dotnet publish src\RegistryCleaner.Gui\RegistryCleaner.Gui.csproj -c Release -r win-x64 `
+  --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
-Measured on the target machine: **64.3 MB** self-contained compressed single-file executable
+Measured on the target machine: **64.4 MB** self-contained compressed single-file executable
 (138.4 MB uncompressed; WPF cannot be trimmed).
+
+> The solution uses the `.slnx` XML format, which needs the .NET 9.0.200 SDK or later and
+> Visual Studio 17.13 or later. The project already requires the .NET 11 SDK, so this costs
+> nothing.
 
 ## Environment verified on 2026-11-20
 

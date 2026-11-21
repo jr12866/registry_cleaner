@@ -511,11 +511,11 @@ artifact for support, and the backup manifest is derived from the same data.
 **Publish as a self-contained single-file executable**
 
 **Context.** Measured on the target machine: a WPF app published self-contained as a single file
-is **138.4 MB** uncompressed and **64.3 MB** with `EnableCompressionInSingleFile=true`. A
+is **138.4 MB** uncompressed and **64.4 MB** with `EnableCompressionInSingleFile=true`. A
 framework-dependent single-file build is roughly 1 MB but requires the .NET 11 Desktop Runtime.
 
 **Decision.** Default distribution is the **self-contained, compressed** single-file executable
-(64.3 MB). The framework-dependent build is published as an additional option for managed
+(64.4 MB). The framework-dependent build is published as an additional option for managed
 environments. WPF is not trimmable, so the size floor is fixed.
 
 **Alternatives considered.**

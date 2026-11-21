@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    RegistryCleaner.Cli
+    The 'rc' command-line interface: the primary and fully-featured front-end.
+    It is a thin shell over RegistryCleaner.Core.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RegistryCleaner.Cli</RootNamespace>
+    <AssemblyName>rc</AssemblyName>
+    <RollForward>latestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RegistryCleaner.Core\RegistryCleaner.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+</Project>

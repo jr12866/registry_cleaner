@@ -38,7 +38,7 @@ Three properties make that commitment real:
 | G2 | Present findings in severity order with plain-English reasoning | Every finding has `Risk`, `Confidence`, `Reason`, and `Evidence`; the GUI shows all four |
 | G3 | Make the user the decision-maker | Zero items are removed without explicit selection; the default selection set is empty except for the `Safe` tier, and even that requires a confirm click |
 | G4 | Make every change reversible | A backup exists for 100% of applied removals; `restore` round-trips a fixture registry exactly |
-| G5 | Ship as a single file with no runtime prerequisite | `dotnet publish` produces one `.exe`; verified by a release script. Measured: 64.3 MB self-contained + compressed, 138.4 MB uncompressed |
+| G5 | Ship as a single file with no runtime prerequisite | `dotnet publish` produces one `.exe`; verified by a release script. Measured: 64.4 MB self-contained + compressed, 138.4 MB uncompressed |
 | G6 | Never damage the machine | The protected-path denylist is enforced in code, not just in rule authoring, and is covered by tests that try to bypass it |
 
 ### Non-goals (explicitly out of scope)
@@ -176,17 +176,31 @@ The full specification is in `SAFETY.md`. The non-negotiable rules:
 
 Estimates assume one developer with AI assistance and a Windows 11 test machine.
 
-| Milestone | Contents | Estimate |
-|-----------|----------|----------|
-| **M0 — Foundation** | Solution scaffold (`Core`, `Cli`, `Gui`, `Core.Tests`, `TestHarness`), CI, `IRegistryReader` abstraction + in-memory fake, protected-path guard with tests, decision log frozen | 1 day |
-| **M1 — Read + first rules** | Real registry provider with caching and dual-view support, reference index, CLI `scan` with table + JSON output, rules R-001…R-005 | 2 days |
-| **M2 — Rule catalog** | Full catalog through R-023, confidence scoring, risk tiering, evidence strings, HTML export | 3 days |
-| **M3 — Apply + restore** | Backup writer (`.reg` + manifest), verification, journal, apply engine, `restore` command, round-trip fixture test | 3 days |
-| **M4 — WPF GUI** | Scan → filter → review → select → clean → undo flow, detail pane, confirmation dialogs, elevation handling | 3 days |
-| **M5 — Hardening + ship** | Test coverage, performance pass on large hives, single-file publish profiles, installer/bundle, user documentation | 2 days |
+| Milestone | Contents | Estimate | Status |
+|-----------|----------|----------|--------|
+| **M0 — Foundation** | Solution scaffold (`Core`, `Cli`, `Gui`, `Core.Tests`, `TestHarness`), CI, `IRegistryReader` abstraction + in-memory fake, protected-path guard with tests, decision log frozen | 1 day | ✅ **Complete** |
+| **M1 — Read + first rules** | Real registry provider with caching and dual-view support, reference index, CLI `scan` with table + JSON output, rules R-001…R-005 | 2 days | Next |
+| **M2 — Rule catalog** | Full catalog through R-023, confidence scoring, risk tiering, evidence strings, HTML export | 3 days | — |
+| **M3 — Apply + restore** | Backup writer (`.reg` + manifest), verification, journal, apply engine, `restore` command, round-trip fixture test | 3 days | — |
+| **M4 — WPF GUI** | Scan → filter → review → select → clean → undo flow, detail pane, confirmation dialogs, elevation handling | 3 days | — |
+| **M5 — Hardening + ship** | Test coverage, performance pass on large hives, single-file publish profiles, installer/bundle, user documentation | 2 days | — |
 
 Total ≈ **2 weeks**. Milestones M0–M2 deliver a fully usable CLI. The GUI is the last piece, so the
 product is valuable well before the schedule ends.
+
+### What M0 delivered
+
+| Item | Detail |
+|------|--------|
+| Solution | `RegistryCleaner.slnx` with 5 projects, all on `net11.0-windows` (ADR-011) |
+| Build config | `global.json` pins the SDK; `Directory.Build.props` centralizes TFM, nullable, analyzers, version stamping; `Directory.Packages.props` centralizes package versions |
+| Core abstractions | `IRegistryReader`, `RegistryLocation`, `RegistryValue`, `IFileSystemProbe`, `Finding`, `RiskTier`, `FindingCategory` |
+| Safety | `ProtectedPathGuard` with the full `docs/SAFETY.md` §4.1 deny-list, §4.2 protected value names, `HKCR` expansion, path canonicalization, 8.3 alias resolution, and file-path protection |
+| Test harness | `FakeRegistryReader`, `RegFileFixtureParser` (a readable `.reg`-style fixture format), `FakeFileSystemProbe` |
+| Tests | **84 passing** — guard bypass attempts, path normalization, fixture parsing |
+| CI | Build, test, coverage, CLI smoke test, single-file publish, and a reproducible-build check |
+| Verified | Release build with 0 warnings; `rc --version` and `rc --help` run; single-file GUI publish produces a **64.4 MB** executable |
+
 
 ### Open source release engineering (spans M0–M5)
 
@@ -209,7 +223,7 @@ Both profiles produce one file; they differ in what the user must already have i
 
 | Profile | Command | Size | Requirement on the target machine |
 |---------|---------|------|-----------------------------------|
-| Self-contained + compressed | `dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true` | **64.3 MB** (measured) | None |
+| Self-contained + compressed | `dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true` | **64.4 MB** (measured) | None |
 | Self-contained, uncompressed | same without `EnableCompressionInSingleFile` | **138.4 MB** (measured) | None |
 | Framework-dependent | `dotnet publish -r win-x64 --self-contained false -p:PublishSingleFile=true` | ~1 MB | .NET 11 Desktop Runtime |
 
@@ -267,8 +281,11 @@ uselessness. This project takes a clear position:
    `main`, initialized independently of the surrounding `C:\git` workspace. The parent directory
    still holds unrelated projects and no commits; it was left untouched.
 5. **Public or closed source** — resolved: public, MIT (ADR-022).
-6. **GitHub organization / repository name** — still to decide before the first push. `README.md`
-   and `CONTRIBUTING.md` currently use the placeholder `https://github.com/<your-username>/registry-cleaner`.
+6. **GitHub organization / repository name** — resolved. The repository is published at
+   <https://github.com/jr12866/registry_cleaner>, public, on branch `main`.
+7. **The maintainer's full legal name** — the `LICENSE` and the `README` copyright line still
+   read "Joe". Replace both with your full legal name so they match the name on the signing
+   certificate (Certum renders it as "Open Source Developer, *name*").
 
 ## 11. Companion documents
 
